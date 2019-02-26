@@ -36,6 +36,7 @@ Scheduler:
     The Scheduler performs its scheduling function based on the resource requirements of
     the applications. The Scheduler has a pluggable policy which is responsible for
     partitioning the cluster resources among the various queues, applications etc.
+    
     There are two types of schedulers in scheduler
             1) Capacity Scheduler
                 The CapacityScheduler is designed to allow sharing a
@@ -51,52 +52,56 @@ Scheduler:
                   
 ApplicationMaster:
 -----------------
-The ApplicationsManager is responsible for accepting job-submissions,
+            The ApplicationsManager is responsible for accepting job-submissions,
 negotiating the first container for executing the application specific
 ApplicationMaster and provides the service for restarting the ApplicationMaster
 container on failure. The per-application ApplicationMaster has the responsibility of
 negotiating appropriate resource containers from the Scheduler, tracking their status
 and monitoring for progress.
-When the ApplicationMaster fails, the ResourceManager simply starts another
+            When the ApplicationMaster fails, the ResourceManager simply starts another
 container with a new ApplicationMaster running in it for another application attempt.
 It is the responsibility of the new ApplicationMaster to recover the state of the
 older ApplicationMaster, and this is possible only when ApplicationMasters persist
 their states in the external location so that it can be used for future reference.
 ApplicatoinMaster will store their state to persisitant disk thus all the status till
 the failure can be recovered.
+
 NodeManager:
 -----------
-Each Node Manager tracks the available data processing resources on its slave
+            Each Node Manager tracks the available data processing resources on its slave
 node and sends regular reports to the Resource Manager. The processing resources in a
 Hadoop cluster are consumed in bite-size pieces called containers. A container is a
 collection of all the resources necessary to run an application: CPU cores, memory,
 network bandwidth, and disk space
-If a Node Manager fails, the ResourceManager detects this failure using a
+            If a Node Manager fails, the ResourceManager detects this failure using a
 time-out (that is, stops receiving the heartbeats from the NodeManager). The
 ResourceManager then removes the NodeManager from its pool of available NodeManagers.
 It also kills all the containers running on that node & reports the failure to all
 running AMs. AMs are then responsible for reacting to node failures, by redoing the
 work done by any containers running on that node during the fault.
+
 Container Failures:
 -------------------
 Container failures will be reported by node manager to Resource manager and
 Resource manager informs the same to Application Master. Now Application will restart
 the container.
+
 Execution plan in Yarn:
-Step1:
------
-Yarn Client request JOBID for application from ResourceManager, mean while
+   Step1:
+            Yarn Client request JOBID for application from ResourceManager, mean while
 output directories created by client in HDFS and copies resources from input
 directories from HDFS. Client submit application to ResourceManager.
+
 Step2:
 -----
-launch
-ResourceManager pickups JOBID from scheduler and contacts to NodeManager to
+            launch ResourceManager pickups JOBID from scheduler and contacts to NodeManager to
 container, for to launch new ApplicationMaster.
+
 Step3:
 -----
 ApplicationMaster creates an object for book keeping and task management. And
 it will monitor resources and status of job progress.
+
 Step4:
 -----
 ApplicationMaster decides to run job with in a container or communicate with
@@ -107,66 +112,22 @@ mapper and reducers in the same process as the ApplicationMaster (AM). Uber jobs
 jobs that are executed within the MapReduce ApplicationMaster. Rather then
 communicate with RM to create the mapper and reducer containers. The AM runs the map
 and reduce tasks within its own process and avoided the overhead of launching and
-communicate with remote containers.File: /home/srinu/Documents/studies/hadoop/yarn_notes
-Page 3 of 3
+communicate with remote containers
+
 Step5:
 -----
 If ApplicationMaster needs more containers to run job, it will communicate
 with NodeManager then NodeManager will collects all resources from HDFS and execute
 the job.
+
 Step6:
 ------ NodeManager after job completion, intermediate data will cleanup and kill
 the containers and gives information about resources to ResourceManager.
+
 Step7:
 -----
 ApplicationMaster will give information about
 ResourceManager and Scheduler update their resources.
 job status to Client and
-yarn commands:
--------------
-application:
-yarn application < >
--appStates <States>
--appTypes <Types>
--help
--kill <Application ID>
--list
--movetoqueue <Application ID>
--queue <Queue Name>
--status <Application ID>
-Works with -list to filter applications
-based on input comma-separated list of
-application states. The valid application
-state can be one of the following:
-ALL,NEW,NEW_SAVING,SUBMITTED,ACCEPTED,RUN
-NING,FINISHED,FAILED,KILLED
-Works with -list to filter applications
-based on input comma-separated list of
-application types.
-Displays help for all commands.
-Kills the application.
-List applications. Supports optional use
-of -appTypes to filter applications based
-on application type, and -appStates to
-filter applications based on application
-state.
-Moves the application to a different
-queue.
-Works with the movetoqueue command to
-specify which queue to move an
-application to.
-Prints the status of the application.
-usage: yarn logs -applicationId <application ID> [OPTIONS]
-general options are:
--appOwner <Application Owner>
--containerId <Container ID>
--help
--nodeAddress <Node Address>
-AppOwner (assumed to be current user if
-not specified)
-ContainerId (must be specified if node
-address is specified)
-Displays help for all commands.
-NodeAddress in the format nodename:port
-(must be specified if container id is
-specified)
+
+

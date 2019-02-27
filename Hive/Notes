@@ -13,6 +13,7 @@ if hive want to execute, it will check
   2) sql statements converted to MapReduce jobs
   3) it will check semantics of job like metadata of tables and columns and job will be executed.
 In MapReduce, where intermediate job output is materialized to HDFS, Tez and Spark can avoid replication overhead by writing the intermediate output to local disk.
+
 HiveQL Statements:
   I) DDL Statements run on databases and tables;
    #databases

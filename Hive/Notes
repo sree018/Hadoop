@@ -1,360 +1,296 @@
-Hive is a data warehouse software enables reading, writing, and managing large datasets in distributed storage. Hive provides standard SQL functionality, Hive's SQL can also be extended with user code via user defined functions (UDFs), user defined aggregates (UDAFs), and user defined table functions (UDTFs). 
-Hive comes with built in connectors for comma and tab-separated values (CSV/TSV) text files, Apache Parquet™, Apache ORC™, and other formats. Hive is not designed for online transaction processing (OLTP) workloads. It is best used for traditional data warehousing tasks. 
-Components of Hive include HCatalog and WebHCat.
-    Hcatalog is a component of Hive. It is a table and storage management layer for Hadoop that enables users with different data processing tools — including Pig and MapReduce — to more easily read and write data on the grid.
-    WebHCat provides a service that you can use to run Hadoop MapReduce (or YARN), Pig, Hive jobs or perform Hive metadata operations using an HTTP (REST style) interface.
-Database is storage for information which provides naming conflicts for tables, views, partitions, columns and so on.
-Tables are collection of homogeneous units of data which have schema. 
+Hive is a data warehouse software enables reading, writing, and managing large datasets in distributed storage. It process structured and semi-structured data in Hadoop.
+
+Hive provides standard SQL functionality, Hive's SQL can also be extended with user code via 
+				user defined functions (UDFs),
+				user defined aggregates (UDAFs), 
+         and user defined table functions (UDTFs).
+
+Hive is not designed for online transaction processing (OLTP) workloads.
+It is best used for traditional data warehousing tasks. Hive comes with built in connectors for comma and tab-separated values (CSV/TSV) text files, 
+Apache Parquet™, Apache ORC™, and other formats. Hive is not designed for online transaction processing (OLTP) workloads. 
+It is best used for traditional data warehousing tasks. 
 
 what is hive engine execution?
- Hive is bunch of jars, which jars convert sql statements into MapReduce jobs by using YARN framework.
+Hive is bunch of jars, which jars convert SQL's statements into MapReduce jobs by using YARN framework.
 if hive want to execute, it will check
-  1) syntax of sql statement
-  2) sql statements converted to MapReduce jobs
-  3) it will check semantics of job like metadata of tables and columns and job will be executed.
+	1) syntax of sql statement
+	2) sql statements converted to MapReduce jobs
+	3) it will check semantics of job like metadata of tables and columns and job will be executed.
+
+Components of Hive
+ 1)  Metastore
+	It stores metadata for each of the tables like their schema and location. Hive also includes the partition metadata.
+ This helps the driver to track the progress of various data sets distributed over the cluster. It stores the data in a traditional RDBMS format. 
+ Hive metadata helps the driver to keep a track of the data and it is highly crucial. Backup server regularly replicates the data which it can retrieve in case of data loss
+
+2)  Driver
+	It acts like a controller which receives the HiveQL statements. The driver starts the execution of the statement by creating sessions.
+ It monitors the life cycle and progress of the execution. Driver stores the necessary metadata generated during the execution of a HiveQL statement.
+ It also acts as a collection point of data or query result obtained after the Reduce operation
+
+3)  Compiler
+	It performs the compilation of the HiveQL query. This converts the query to an execution plan. The plan contains the tasks.
+ It also contains steps needed to be performed by the MapReduce to get the output as translated by the query. The compiler in Hive converts the query to an Abstract Syntax Tree (AST).
+ First, check for compatibility and compile-time errors, then converts the AST to a Directed Acyclic Graph (DAG).
+	
+4)  Optimizer
+	It performs various transformations on the execution plan to provide optimized DAG. 
+It aggregates the transformations together, such as converting a pipeline of joins to a single join, for better performance.
+ The optimizer can also split the tasks, such as applying a transformation on data before a reduce operation, to provide better performance.
+	
+5) Executor
+	Once compilation and optimization complete, the executor executes the tasks. Executor takes care of pipelining the tasks.
+	 
+6) CLI, UI, Thrift Server
+	CLI (command-line interface) provides a user interface for an external user to interact with Hive.
+ Thrift server in Hive allows external clients to interact with Hive over a network, similar to the JDBC or ODBC protocols.
+ HCatalog is a table and storage management layer for Hadoop that enables users with different data processing tools — including Pig and MapReduce — to more easily read and write data on the grid.
+ WebHCat provides a service that you can use to run Hadoop MapReduce (or YARN), Pig, Hive jobs or perform Hive metadata operations using an HTTP (REST style) interface.
+
+Database is storage for information which provides naming conflicts for tables, views, partitions, columns and so on. Tables are collection of homogeneous units of data which have schema.
 In MapReduce, where intermediate job output is materialized to HDFS, Tez and Spark can avoid replication overhead by writing the intermediate output to local disk.
 
-HiveQL Statements:
-  I) DDL Statements run on databases and tables;
-   #databases
-      1) CREATE:
-     hive> create database hivetraining2;
-	hive> show databases;
-	OK
-	default
-	hivetraining2      
-      2) DROP:
-         hive> drop database hivetraining2;
-	 OK
-	 Time taken: 0.416 seconds
-      3) alter
-           >>> ownership
-           >>> location
-           >>> database properties
-      4) use
-         hive> use hivetraining2;
-	 OK
-	 Time taken: 0.031 seconds
-#tables
+Hive makes the job easy for performing operations like
+	Analysis of huge datasets
+	Ad-hoc queries
+	Data encapsulation
+
+DDL STATEMENTS:       DML STATEMENTS:
+	CREATE                LOAD
+	SHOW                  SELECT
+	DESCRIBE              INSERT
+	USE                   DELETE
+	DROP                  UPDATE
+	ALTER                 EXPORT
+	TRUNCATE              IMPORT 
+	
+Data in Apache Hive can be categorized into:
+	Table
+	  |-> Partition
+	        |-> Bucket
+	
+	
+Tables: 
 1)create
 	create table if not exists airlines_data(
-	Airline_ID INT,Name STRING,Alias STRING,IATA STRING,
-	ICAO STRING,Callsign STRING,Country STRING,Active STRING)
-	ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' 
-     STORED AS TEXTFILE;	
-Managed and External Tables
-In hive they are two types of tables present.
-	1) managed tables
-     2) external tables
- when you drop a table, if it is managed table hive deletes both data and meta data, if it is external table Hive only deletes metadata.
-1) Managed Tables:
-    A managed table is stored under the hive.metastore.warehouse.dir path property. 
-    BY DEFAULT, DATA IN HDFS /APPS/USER/WAREHOUSE/DATABASENAME.DB/TABLENAME/.
-    The default location can be overridden by the location property during table creation.
-    If a managed table or partition is dropped, the data and metadata associated with that table or partition are deleted and associated views also unavailable. 
-    If the PURGE option is not specified, the data is moved to a trash folder for a defined duration but metadata present.
-hive> describe formatted airport_data;
-# Detailed Table Information	 	 
-Database:           	default             	 
-Owner:              	srinu               	 
-CreateTime:         	Sun Aug 19 09:08:03 EDT 2018	 
-LastAccessTime:     	UNKNOWN             	 
-Retention:          	0                   	 
-Location:           	hdfs://name:9000/user/hive/warehouse/airport_data	 
-Table Type:         	MANAGED_TABLE 
+						Airline_ID INT,
+						Name STRING,
+						Alias STRING,
+						IATA STRING,
+	                                        ICAO STRING,
+						Callsign STRING,
+						Country STRING,
+						Active STRING)
+	              ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+                      STORED AS TEXTFILE;
+	
+In hive they are two types of tables present. 
+1) managed tables
+        A managed table is stored under the hive.metastore.warehouse.dir path property. 
+        BY DEFAULT, DATA IN HDFS /APPS/USER/WAREHOUSE/DATABASENAME.DB/TABLENAME/.
+        The default location can be overridden by the location property during table creation.
+	If a managed table or partition is dropped, 
+	the data and metadata associated with that table or partition are deleted and associated views also unavailable. 
+	If the PURGE option is not specified, the data is moved to a trash folder for a defined duration but metadata present.
+	
+	hive> describe formatted airport_data;
+	        # Detailed Table Information 
+		Database: default 
+		Owner: srinu 
+		CreateTime: Sun Aug 19 09:08:03 EDT 2018 
+		LastAccessTime: UNKNOWN 
+		Retention: 0 
+		Location: hdfs://name:9000/user/hive/warehouse/airport_data 
+		Table Type: MANAGED_TABLE 
+				
+2) External Tables:
+	To create external table, we use external keyword like below
+				
+	create external table plane_data(
+					Name STRING, 
+					IATA STRING, 
+					ICAO STRING)
+				ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+				 STORED AS TEXTFILE;
+				
+	load data local inpath '/home/srinu/datasets/airport_data/planes.dat' into table plane_data;
+			
+	hive>describe formatted plane_data; 
+		# Detailed Table Information 
+		Database: hivetraining 
+		Owner: srinu 
+		CreateTime: Wed Sep 26 13:41:52 EDT 2018 
+		LastAccessTime: UNKNOWN 
+		Retention: 0 
+		Location: hdfs://NAME:9000/user/hive/warehouse/hivetraining.db/plane_data 
+		Table Type: EXTERNAL_TABLE
+			
+	
+Partitions:
+   Hive organizes tables into partitions for grouping same type of data together based on a column or partition key.
+   Each table in the hive can have one or more partition keys to identify a particular partition.
+   Using partition we can also make it faster to do queries on slices of the data.
+	
+   They are two types of modes present in partition table.
+   1) STRICTMODE
+	In this mode, we can have at least one static partition column and N dynamic partition column.
+
+ 2)  NON-STRICT MODE		 
+	In this mode all are dynamic partitioned columns.
+	To enable full dynamic partitioning, we have to set below property to non-strict in hive.
+
+	->Before creating Partitioned table in hive first we set the properties for dynamic partition
+		SET hive.exec.dynamic.partition=true;
+		SET hive.exec.dynamic.partition.mode=non-strict;
+		set hive.exec.dynamic.partition.mode=nonstrcit
+		By default, number of partitions allowed for single node is 100 and cluster is 1000. 
+		So, if you are running in pseudo distributed mode with single node and you partitioned column cardinality is more than 100, 
+		than set the below hive property as well.
+		 
+		hive> set hive.exec.max.dynamic.partitions.pernode=1000
+		In order to load data by partition by dynamic table.
+		First create table and one more temp table
+		
+		CREATE TABLE airport_data2 (
+		airport_ID INT, name STRING, City STRING, IATA STRING,
+		ICAO STRING, Latitude DECIMAL(5,5), Longitude DECIMAL(5,5),
+		Altitude INT, Timezone DECIMAL(3,3), DST STRING,
+		Tz_time_zone STRING, Type STRING, Source STRING)
+		PARTITIONED BY (COUNTRY STRING)
+		ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+		STORED AS TEXTFILE;
+		
+		INSERT INTO TABLE airport_data2 PARTITION (Country) select airport_ID
+                                                                        ,name
+									,City
+									,IATA
+									,Country
+									,ICAO
+									,Latitude
+									,Longitude
+									,Altitude
+									,Timezone,DST 
+									,Tz_time_zone
+									,Type
+									,Source 
+									FROM airport_data1;
+		
+	
+	create table if not exists airlines_data(
+						Airline_ID INT,
+						Name STRING,
+						Alias STRING,
+						IATA STRING,
+	                                        ICAO STRING,
+						Callsign STRING,
+						Country STRING,
+						Active STRING)
+				PARTITIONED BY (Country STRING)
+	                        ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+				STORED AS TEXTFILE;
+	
+ A simple query in Hive reads the entire dataset even if we have where clause filter.
+ This becomes a bottleneck for running MapReduce jobs over a large table. We can overcome this issue by implementing partitions in Hive.
+ Hive makes it very easy to implement partitions by using the automatic partition scheme when the table is created.
+	
+ There are two types of Partitioning in  Hive
+   1) Static Partitioning
+	Usually when loading files (big files) into Hive tables static partitions are preferred.
+	That saves your time in loading data compared to dynamic partition. 
+	User segregate data by values, not by column, file loaded by creating virtual column (not part of the file) with values.
+	If you want to use the Static partition in the hive, then
+	set property set hive.mapred.mode = strict This property set by default in hive-site.xml
+	Static partition is in Strict Mode.
+		
+	CREATE TABLE airport_data (airport_ID INT,
+				   name STRING,
+					City STRING,
+					IATA STRING,
+					ICAO STRING,
+					Latitude DECIMAL(5,5),
+					Longitude DECIMAL(5,5),
+					Altitude INT,
+					Timezone DECIMAL(3,3),
+					DST STRING,
+					Tz_time_zone STRING,
+					Type STRING,
+					Source STRING) 
+				PARTITIONED BY (COUNTRY STRING)
+				ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+				STORED AS TEXTFILE;
+		
+	load data local inpath "/home/srinu/datasets/airport_data/airports.dat' into table airport_data PARTITION (Country ='USA');
+	You should use where clause to use limit in the static partition
+		
+	load data local inpath '/home/user/Desktop/file/station' into table world;
+	You can perform Static partition on Hive Manage table or external table
+		
+    2) Dynamic Partitioning
+	Single insert to partition table is known as a dynamic partition.
+	Usually, dynamic partition loads the data from the non-partitioned table.
+	Dynamic Partition takes more time in loading data compared to static partition.
+	When you have large data stored in a table then the Dynamic partition is suitable.
+	If you want to partition a number of columns but you don’t know how many columns then also dynamic partition is suitable.
+	Dynamic partition there is no required where clause to use limit.
+	we can’t perform alter on the Dynamic partition.
+	You can perform dynamic partition on hive external table and managed table.
+	If you want to use the Dynamic partition, then set property set hive.mapred.mode = non-strict mode.
 
 
-2) Extrnal Tables:
-To create external table, we use external keyword like below
-create external table plane_data(
-Name STRING, IATA STRING, ICAO STRING)
-ROW FORMAT DELIMITED
-FIELDS TERMINATED BY '\t'
-STORED AS TEXTFILE;
 
-load data local inpath '/home/srinu/datasets/airport_data/planes.dat' into table plane_data;
-hive>describe formatted plane_data; 	 
-# Detailed Table Information	 	 
-Database:           	hivetraining        	 
-Owner:              	srinu               	 
-CreateTime:         	Wed Sep 26 13:41:52 EDT 2018	 
-LastAccessTime:     	UNKNOWN             	 
-Retention:          	0                   	 
-Location:           	hdfs://NAME:9000/user/hive/warehouse/hivetraining.db/plane_data	 
-Table Type:         	EXTERNAL_TABLE  
-
-Storage Formats
-Storage formats are two types
-      1) column oriented
-      2) row oriented 
-ROW ORIENTED FILES ARE:
- Text files, delimited formats like CSV, TSV. AVRO
-     * Default, JSON, CSV formats are available
-     * Slow to read and write
-     * Can’t split compressed files (Leads to Huge maps) 
-     * Need to read/decompress all fields.
- Column oriented file formats are 
-     1) RCfile
-     2) ORC
-     3) parquet
-1)RC File
-    RCFILE stands of Record Columnar File which is another type of binary file format which offers high compression rate on the top of the rows used when we want to perform operations on multiple rows at a time.
-     * columns stored separately
-     * Read and decompressed only needed one.
-     * Better compression
-     * Columns stored as binary Blobs 
-     * Depend on Meta store to supply Data types
-     * Large Blocks - 4MB default
-     * Still search file for split boundary 
-2)ORC File
-	ORC reduces the size of the original data up to 75%. As a result, the speed of data processing also increases and shows better performance than Text, Sequence and RC file formats. An ORC file contains rows data in groups called as Stripes along with a file footer.
-3)Parquet File
-    Parquet file format is also a columnar format. Parquet is good for nested data. The storing rows of data adjacent to one another you also store column values adjacent to each other. So datasets are partitioned both horizontally and vertically. This is particularly useful if your data processing framework just needs access to a subset of data that is stored on disk as it can access all values of a single column very quickly without reading whole records. Parquet format is computationally intensive on the writes side, but it reduces a lot of I/O cost to make great read performance. 
-
-Avro is row oriented as well as data& Schema.
-1)AVRO File
-    AVRO is open source project that provides data serialization and data exchange services for Hadoop.
-2)Sequence File
-	Sequence files are Hadoop flat files which stores values in binary key-value pairs. The sequence files are in binary format and these files can be split. The main advantages of using sequence file is to merge two or more files into one file.
-Row Formats & SerDe
-You can create tables with a custom SerDe or using a native SerDe. A native SerDe is used if ROW FORMAT is not specified or ROW FORMAT DELIMITED is specified. Stored as plain text file, translated by Regular Expression.
-for row farmats,
-for RegEx -> ROW FORMAT SERDE 
-          'org.apache.hadoop.hive.contrib.serde2.RegexSerDe'
-for JSON  -> ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe' 
-for CSV   -> ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde' 
-
-CREATE TABLE serde_regex(
-  host STRING, identity STRING, user STRING, time STRING, request STRING, status STRING, size STRING, referer STRING,   agent STRING)
-ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe' WITH SERDEPROPERTIES (  "input.regex" = "([^ ]*) ([^ ]*) ([^ ]*) (-|\\[[^\\]]*\\]) ([^ \"]*|\"[^\"]*\") (-|[0-9]*) (-|[0-9]*)(?: ([^ \"]*|\"[^\"]*\") ([^ \"]*|\"[^\"]*\"))?",
-  "output.format.string" = "%1$s %2$s %3$s %4$s %5$s %6$s %7$s %8$s %9$s" #/ column names here /#
-)
-STORED AS TEXTFILE;
-Partitioned Tables:
-To avoid the execution time on tables, we create the partitions on tables. Partitions are two types:
-	A simple query in Hive reads the entire dataset even if we have where clause filter. This becomes a bottleneck for running MapReduce jobs over a large table. 
-We can overcome this issue by implementing partitions in Hive. Hive makes it very easy to implement partitions by using the automatic partition scheme when the table is created.
- 1) static partition
- 2) dynamic partition
-         a) strict mode
-	    b) non-strict mode
-Dynamic partition used for non-partition table while static partition used for partition table.
-1) static partition:
-	Usually when loading files (big files) into Hive tables static partitions are preferred. That saves your time in loading data compared to dynamic partition. User segregate data by values, not by column, file loaded by creating virtual column (not part of the file) with values.
-CREATE TABLE airport_data (airport_ID INT,name STRING,City STRING,IATA STRING,ICAO STRING,Latitude DECIMAL(5,5),	  Longitude DECIMAL(5,5),Altitude INT,Timezone DECIMAL(3,3),DST STRING,Tz_time_zone STRING,Type STRING,Source STRING) 
-       PARTITIONED BY (COUNTRY STRING)
-       ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
-       STORED AS TEXTFILE;
-load data local inpath “/home/srinu/datasets/airport_data/
-airports.dat' into table airport_data PARTITION (Country ='USA');
-load data local inpath '/home/user/Desktop/file/station' into table world;
-2) Dynamic partition:
-	dynamic partition whole big file i.e. every row of the data is read, and data is partitioned through a MR job into the destination tables depending on certain field in file. So usually dynamic partition is useful when you are doing sort of data transformations. 
-STRICTMODE:
-  In this mode, we can have at least one static partition column and N dynamic partition column.
-NON-STRICT MODE:
-  In this mode all are dynamic partitioned columns.
-To enable full dynamic partitioning, we have to set below property to non-strict in hive.
-->Before creating Partitioned table in hive first we set the properties for dynamic partition
-       SET hive.exec.dynamic.partition=true;
-       SET hive.exec.dynamic.partition.mode=non-strict;
-       set hive.exec.dynamic.partition.mode=nonstrcit
-By default, number of partitions allowed for single node is 100 and cluster is 1000. 
-so, if you are running in pseudo distributed mode with single node and you partitioned column cardinality is more than 100, 
-than set the below hive property as well.   
-      hive> set hive.exec.max.dynamic.partitions.pernode=1000
-
-
-
-In order to load data by partition by dynamic table.
-First create table and one more temp table
-	CREATE TABLE airport_data2 (
-	airport_ID INT, name STRING, City STRING, IATA STRING,
-	ICAO STRING, Latitude DECIMAL(5,5), Longitude DECIMAL(5,5),
-	Altitude INT, Timezone DECIMAL(3,3), DST STRING,
-	Tz_time_zone STRING, Type STRING, Source STRING)
- PARTITIONED BY (COUNTRY STRING)
-	ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-	STORED AS TEXTFILE;
-INSERT INTO TABLE airport_data2 PARTITION (Country) select airport_ID,name,City,IATA,Country,ICAO,Latitude,Longitude,Altitude,Timezone,DST ,Tz_time_zone, Type,Source FROM airport_data1;
-We use dynamic partition while loading from an existing table that is not partitioned.
-We use dynamic partition while unknown values for partition columns.
-Create Table As Select (CTAS):
-Tables can also be created and populated by the results of a query in one create-table-as-select (CTAS) statement. 
- CTAS has these restrictions:
-     The target table cannot be a partitioned table.
-     The target table cannot be an external table.
-     The target table cannot be a list bucketing table.
-CREATE TABLE mytable AS select airline_id,name,active,country from airlines_data;
-Bucketed Sorted Tables
 BUCKETING:
-   Default Partition in Hive is called as Bucketing.
-   Usually Partitioning in Hive offers a way of segregating hive table data into multiple files/directories.
-  	1.There are limited number of partitions,
-     2.Comparatively equal sized partitions.
-It is a process of converting one file into N number of buckets. In partition we have no control on number of partitions because number of partitions is equal to number of distinct values of the that column. 
-We use CLUSTERED BY clause to divide the table into buckets.
-Bucketing can be done along with Partitioning on Hive tables and even without partitioning.
-Bucketing uses hash function for data partitioning,
-  No of buckets = bucketed column.gethashcode % no of Buckets
-->First set the property before create bucketing table in hive
-      set hive.enforce.bucketing =true;
-Skewed Tables: 
-     In Skewed Tables, partition will be created for the column value which has many records and rest of the data will be moved to another partition. Hence number of partitions, number of mappers and number of intermediate files will be reduced.
-CREATE TABLE T (C1 STRING, C2 STRING) SKEWED BY (C1) ON ('X1', 'X2', 'X3')
-	For ex: out of 100 patients, 90 patients have high BP and other 10 patients have fever, cold, cancer etc. So one partition will be created for 90 patients and one partition will be created for other 10 patients.
-Temporary Tables
-	A temporary table is a convenient way for an application to automatically manage intermediate data generated during a large or complex query execution. Hive 0.14 onward supports temporary tables. You can use temporary table repeatedly within a user session for multiple times. Hive automatically deletes all temporary tables at the end of the Hive session in which they are created.
- CREATE TEMPORARY TABLE temp1(col1 string);
-     Below are the some of the limitations of Hive temporary tables:
-	Partition columns option is not supported on temporary tables.
-	Creating indexes on temporary table is not allowed.
-	A temporary table with the same name as a permanent table will cause all references to that table name to resolve to the temporary table.
-	The user cannot access the permanent table with same name as temporary tables during that session without dropping or renaming the temporary table.
-Transactional Tables:
-	If you have requirement to update Hive table records, then Hive provides ACID transactions. This feature is available in Hive 0.14 and above. You must create table by setting up TBLPROPERTIES to use transactions on the tables.TBLPROPERTIES enables, ACID transactions on Hive tables. Let’s start by creating a transactional table. Only transactional tables can support updates and deletes. 
-     DROP TABLE IF EXISTS hive_acid_demo;
-			CREATE TABLE hive_acid_demo (key int, value int)
-			CLUSTERED BY(key) INTO 3 BUCKETS
-			STORED AS ORC
-			TBLPROPERTIES ('transactional'='true');
+	In Hive Tables or partition are subdivided into buckets based on the hash function of a column in the table to give extra structure to the data that may be used for more efficient queries.
+	It is a process of converting one file into N number of buckets. 
+	First set the property before create bucketing table in hive
+	set hive.enforce.bucketing =true;
+	
+	In partition we have no control on number of partitions because number of partitions is equal to number of distinct values of the that column. 
+	We use CLUSTERED BY clause to divide the table into buckets.
+	Bucketing can be done along with Partitioning on Hive tables and even without partitioning.
+	Bucketing uses hash function for data partitioning,
+	No of buckets = bucketed column.gethashcode % no of Buckets
 
-DML statements
->>>LOAD 
-	Hive does not do any transformation while loading data into tables. Load operations are currently pure copy/move operations that move datafiles into locations corresponding to Hive tables.
-	LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
-Data can be appended into a Hive table that already contains data. Data can also be overwritten in the Hive table. Data can
-also be inserted into multiple tables through a single statement only.
+	CREATE TABLE bucketed_user(
+  		firstname VARCHAR(64),
+  		lastname  VARCHAR(64),
+  		address   STRING,
+  		city VARCHAR(64),
+  		state  VARCHAR(64),
+  		post      STRING,
+  		phone1    VARCHAR(64),
+  		phone2    STRING,
+  		email     STRING,
+  		web       STRING)
+	COMMENT ‘A bucketed sorted user table’
+  	PARTITIONED BY (country VARCHAR(64))
+	CLUSTERED BY (state) SORTED BY (city) INTO 32 BUCKETS
+ 	STORED AS SEQUENCEFILE;
 
->>>INSERT
-	into Hive tables from queries
-first create empty table, and insert data
-create table plain_data (name string, iata string,icao string);
-INSERT INTO table plain_data select name, iata, icao from plane_data;
-here plane_data tables is exits.
-
-into Hive tables from SQLLoading files into tables
- INSERT INTO sales VALUES (1, 'John', 'Terry', 'H-43 Sector-23', 'Delhi','India', '10.10.10.10', 'P_1', '15-11-1985')
-
->>>UPDATE
-           UPDATE STUDENTS SET NAME = NULL WHERE GPA <= 1.0;
->>>DELETE
->>>MERGE
->>>IMPORT
->>>EXPORT
-views:
-Views in SQL provide abstraction from querying a table directly. A view could be a combination of multiple tables joined or grouped on a set of columns. views could be broadly categorized into two types:
-       >> Materialized views
-       >> Non-materialized views
-Hive supports only non-materialized views and as it does not support materialized data.A view is a virtual table that acts as a window to the data for the underlying table commonly known as the base table. It consists of rows and columns but no physical data. So when a view is accessed, the underlying base table is queried for the output.
-Create view Hive_view As select * from Hive_learning;
-case: when we create views on any( managed & external) table, if we drop the table then we can't access the view.
-Indexing:
- Instead of searching all the records, we can refer to the index to search for a particular record. Indexes maintain the reference of the records. Indexing is faster retrieval process.
-Hive supports two types of indexes
-         1) compact
-         2) Bitmap
--> Differences between Compact and Bitmap Indexing
-	The main difference is the storing of the mapped values of the rows in the different blocks. When the data inside a Hive table is stored by default in the HDFS, they are distributed across the nodes in a cluster. There needs to be a proper identification of the data, like the data in block indexing. This data will be able to identity which row is present in which block, so that when a query is triggered it can go directly into that block. So, while performing a query, it will first check the index and then go directly into that block.
-Compact indexing stores the pair of indexed column’s value and its blockid. 
-Bitmap indexing stores the combination of indexed column value and list of rows as a bitmap.
-BitMap indexing:
-Bitmap index stores the combination of value and list of rows as a digital image.
-Operations on indexing
-1) create index
-2) alter index
-3) dropping index
-4) show index
-
-CREATE Index for NON-INDEX TABLE:
-hive>create table patient (patient_id int,patient_name string,drug string,gender string,total_amount int) row format delimited fields terminated by ',' stored as textfile;
-
-INDEX TABLE:
-Compact---->
-	CREATE INDEX patient_index ON TABLE patient (drug) AS 
-'org.apache.hadoop.hive.ql.index.compact.CompactIndexHandler'
-		WITH DEFERRED REBUILD;
-
-BitMap ----->   CREATE INDEX patient_bitmap
-		ON TABLE patient (age)
-		AS 'BITMAP'
-		WITH DEFERRED REBUILD;
-ALTER INDEX patient_bitmap on patient REBUILD;
-hive> show formatted index on patient;          
-idx_name → patient_index ,tab_name → Patient 
-col_names → drug
- idx_tab_name→ default_patient_patient_index_compact             
-
-DROP INDEX IF EXISTS patient_index ON patient;
-
-When not to use indexing?
-The indexing is not used in the following scenarios:
-	1)Indexes are advised to build on the columns on which you frequently perform operations.
-	2)Building more number of indexes also degrade the performance of your query.
-3)Type of index to be created should be identified prior to its creation (if your data requires bitmap you should not create compact. This leads to increase in time for executing your query.
-
-SUBQUERIES:
-Hive supports subqueries in FROM clauses and in WHERE clauses of SQL statements.
-Subqueries in WHERE clauses have the following limitations:
-    #Subqueries must appear on the right-hand side of an expression.
-    #Nested subqueries are not supported.
-    #Only one subquery expression is allowed for a single query.
-    #Subquery predicates must appear as top-level conjuncts.
-    #Subqueries support four logical operators in query predicates: IN, NOT IN, EXISTS, and NOT EXISTS.
-    #The IN and NOT IN logical operators may select only one column in a WHERE clause subquery.
-    #The EXISTS and NOT EXISTS operators must have at least one correlated predicate.
-    #The left side of a subquery must qualify all references to table columns.
-    #References to columns in the parent query are allowed only in the WHERE clause of the subquery.
-    #Subquery predicates that reference a column in a parent query must use the equals (=) predicate operator.
-    #Subquery predicates may not refer only to columns in the parent query.
-    #Correlated subqueries with an implied GROUP BY statement may return only one row.
-    #All unqualified references to columns in a subquery must resolve to tables in the subquery.
-    #Correlated subqueries cannot contain windowing clauses.
 JOINS:
-Joins are of 4 types, these are
-    * Inner join
-        The Records common to the both tables will be retrieved by this Inner Join.
-    * Left outer Join
-        LEFT OUTER JOIN returns all the rows from the left table even though there are no matches in right table
-    * Right Outer Join
-        RIGHT OUTER JOIN returns all the rows from the Right table even though there are no matches in left table
-    * Full Outer Join
-         all the records from both tables and fills in NULL Values for the columns missing values matched on either side.
+	1. INNER JOIN
+	2. FULL OUTER JOIN
+	3. LEFT OUTER JOIN
+	4. RIGHT OUTER JOIN
+
+
+
+
+
+
+
+
 
 Analytics functions:
--> RANK            +---+------------+------+------------+
--> ROW_NUMBER      | V | ROW_NUMBER | RANK | DENSE_RANK |
--> DENSE_RANK      +---+------------+------+------------+
--> CUME_DIST       | a |          1 |    1 |          1 |
--> PERCENT_RANK   | a |          2 |    1 |          1 |
-                   | a |          3 |    1 |          1 |
-                    | b |          4 |    4 |          2 |
-                    | c |          5 |    5 |          3 |
-                    | c |          6 |    5 |          3 |
-                    | d |          7 |    7 |          4 |
-                    | e |          8 |    8 |          5 |
-                    +---+------------+------+------------+
++---+----+----------+----------+
+| V |RANK|ROW_NUMBER|DENSE_RANK|
++---+----+----------+----------+
+| a | 1  | 1        | 1        |
+| a | 2  | 1        | 1        |
+| a | 3  | 1        | 1        |
+| b | 4  | 4        | 2        |
+| c | 5  | 5        | 3        |
+| c | 6  | 5        | 3        |
+| d | 7  | 7        | 4        |
+| e | 8  | 8        | 5        |
++---+----+----------+----------+
 
-question:1
-A table (student_marks) contains following columns 
-Student name Marks
-------------------
-Alex 98                  Marks Grade
-Ethan 94                    >= 97 A+
-Sam 90                      93 - 96 A
-Zion 70                      90 - 92 A-, Others B         
-Write a sql query to calculate grade from marks. Final result should have student name, marks and their grade.
-
-solution:
-hive> select name,marks,case when marks >= 90 then 'A' when marks <=89 and marks >= 80 then 'B' when marks <=79 and marks >= 70 then 'C' else 'fail' end as grade from students;
-OK
-Alex	94	A
-Ethan	94	A
-Sam	90	A
-Zion	70	C
-raju	95	A
-kiran	90	A
-ram	85	B
-gowari	80	B
- 
-Question:2
